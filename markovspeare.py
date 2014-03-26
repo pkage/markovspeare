@@ -3,6 +3,7 @@
 import os
 import sys
 from pymarkovchain import MarkovChain
+import string
 
 def stringify_file(fp):
 	try:
@@ -16,13 +17,7 @@ def stringify_file(fp):
 	return s
 
 try:
-	fp = sys.argv[1]
-except:
-	print "CRITICAL: no input files!"
-	sys.exit(0)
-
-try:
-	msl = int(sys.argv[2])
+	msl = int(sys.argv[1])
 except:
 	msl = 0
 	print "WARNING: no minimum sentence length specified, defaulting to zero"
@@ -33,11 +28,53 @@ def countString(s):
 
 print ("initializing markov engine...")
 mc = MarkovChain("./markov")
-print ("reading input file " + fp)
-f = stringify_file(fp)
-print ("generating markov database")
-mc.generateDatabase(f)
+f = ""
+infile = open("texts.txt",'r')
+for fp in infile:
+	fp = fp[:-1]
+	print ("reading input file " + fp)
+	f += stringify_file(fp)
+
+if raw_input("regen database: ").lower() == 'y':
+	print ("generating markov database")
+	mc.generateDatabase(f)
 print ("ready to generate strings.")
+
+def pgraph():
+	while True:
+		os.system("clear")
+		iterations = int(raw_input("Iterations: "))
+		seed = raw_input("Seed: ")
+		if seed == '!q':
+			return
+		if (len(seed) == 0):
+			sd = False
+		else:
+			if f.find(seed) != -1:
+				sd = True
+			else:
+				raw_input('could not find "' + seed + '" in database\npress enter to continue')
+				sd = False		
+		c = 0
+		final = ""
+		while c < iterations:
+			if sd:
+				ts = mc.generateStringWithSeed(seed)
+			else:
+				ts = mc.generateString()
+			if c == 0:
+				final += ts.split(' ',1)[1]
+
+			final += ts
+			sd = True
+			seed = ts.split()[-1]
+			seed = seed.translate(string.maketrans("",""), string.punctuation)
+			c += 1
+		print ("\n" + final + "\n")
+		raw_input("press enter to continue...")
+if raw_input("press enter to begin.") == "beta":
+	pgraph()
+
 sd = False
 s = ""
 while True:
@@ -50,5 +87,11 @@ while True:
 		print ("\n" + ts + "\n")
 		sd = False
 		s = raw_input("\npress enter to generate string. : ")
+		if s == '!pg':
+			pgraph()
 		if (len(s) > 0):
-			sd = True
+			if f.find(s) != -1:
+				sd = True
+			else:
+				raw_input('could not find "' + s + '" in database\npress enter to continue')
+				sd = False
